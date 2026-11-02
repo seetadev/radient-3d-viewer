@@ -3,12 +3,17 @@
   "private": true,
   "version": "1.0.0",
   "description": "three.js based simple 3D model viewer",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "vendor": "node tools/vendor.mjs"
+    "vendor": "node tools/vendor.mjs",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "bootstrap": "5.3.8",
+    "pngjs": "7.0.0",
     "three": "0.187.0"
   }
 }
