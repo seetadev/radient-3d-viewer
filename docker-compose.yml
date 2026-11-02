@@ -5,6 +5,10 @@ services:
     environment:
       PORT: "8888"
       # DEBUG is intentionally not set: debug/autoreload are off unless explicitly enabled
+      # Production behind a TLS proxy (see README): HSTS is opt-in, empty = off
+      HSTS_SECONDS: ${HSTS_SECONDS:-}
+      HSTS_INCLUDE_SUBDOMAINS: ${HSTS_INCLUDE_SUBDOMAINS:-}
+      SECURE_COOKIES: ${SECURE_COOKIES:-}
     ports:
       - "${HOST_PORT:-8888}:8888"
     read_only: true
