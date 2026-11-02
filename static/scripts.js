@@ -93,10 +93,6 @@ var callback = function ( geometry, materials ) {
 };
 
 function getMaterial(){
-    var imgTexture = new THREE.TextureLoader().load( "http://threejs.org/examples/textures/planets/moon_1024.jpg" );
-    imgTexture.wrapS = imgTexture.wrapT = THREE.RepeatWrapping;
-    imgTexture.anisotropy = 16;
-    imgTexture = null;
 
     var path = "static/cubemap/";
     var format = '.jpg';
@@ -114,7 +110,7 @@ function getMaterial(){
     roughness = -1.0;
 
     var diffuseColor = new THREE.Color( 1.0, 0, 0 ).multiplyScalar( 1 - 0.08 );
-    var material = new THREE.MeshStandardMaterial( { map: imgTexture, bumpMap: imgTexture, bumpScale: bumpScale, color: diffuseColor, metalness: metalness, roughness: roughness, shading: THREE.SmoothShading, envMap: reflectionCube } )
+    var material = new THREE.MeshStandardMaterial( { color: diffuseColor, metalness: metalness, roughness: roughness, shading: THREE.SmoothShading, envMap: reflectionCube } )
     //var material = new THREE.MeshStandardMaterial( { shading: THREE.SmoothShading, color: diffuseColor, metalness: metalness, bumpScale: bumpScale, bumpMap: imgTexture, envMap: reflectionCube } );
     return material;
 }
