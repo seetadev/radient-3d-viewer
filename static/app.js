@@ -6,6 +6,9 @@ const $ = (sel) => document.querySelector(sel);
 const container = $('#viewer-container');
 const statusEl = $('#load-status');
 const colorInput = $('#hex-color');
+// Hosting apps may override these on #viewer-container (the Django port does); defaults suit Tornado.
+const MODELS_URL = container.dataset.modelsUrl || '/models/';
+const STATIC_URL = container.dataset.staticUrl || '/static/';
 
 let scene, camera, renderer, pointLight;
 let mesh = null;        // declared up front: the animation loop reads it before the first model loads
@@ -13,7 +16,7 @@ let loadToken = 0;      // ignore results of superseded loads (fast model switch
 
 const loader = new GLTFLoader();
 const envMap = new THREE.CubeTextureLoader().load(
-  ['px', 'nx', 'py', 'ny', 'pz', 'nz'].map((s) => `/static/cubemap/${s}.jpg`));
+  ['px', 'nx', 'py', 'ny', 'pz', 'nz'].map((s) => `${STATIC_URL}cubemap/${s}.jpg`));
 envMap.colorSpace = THREE.SRGBColorSpace;
 
 const material = new THREE.MeshStandardMaterial({
@@ -93,7 +96,7 @@ function loadModel() {
   statusEl.style.visibility = 'visible';
   statusEl.textContent = 'Loading your model, please wait...';
   container.dataset.loaded = 'false';
-  loader.load(`/models/${name}.glb`, (gltf) => {
+  loader.load(`${MODELS_URL}${name}.glb`, (gltf) => {
     if (token !== loadToken) return;
     statusEl.style.visibility = 'hidden';
     clearMesh();
