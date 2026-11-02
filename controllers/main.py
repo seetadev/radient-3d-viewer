@@ -9,7 +9,7 @@ from tornado.web import GZipContentEncoding
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, RequestHandler
 
-from controllers.security import SecureHeadersMixin, page_csp
+from controllers.security import SecureHeadersMixin, env_bool, hsts_header, page_csp
 from modules import uimodules
 
 # Minimal images (python:slim) have no /etc/mime.types; without this .glb is served as octet-stream.
@@ -56,7 +56,8 @@ def make_app(debug=False):
         autoreload=debug,
         compress_response=True,
         xsrf_cookies=True,  # POST /api is the only state-changing route
-        xsrf_cookie_kwargs={"samesite": "Strict", "secure": os.environ.get("ENABLE_HSTS", "").lower() in ("1", "true", "yes")},
+        xsrf_cookie_kwargs={"samesite": "Strict", "secure": env_bool("SECURE_COOKIES")},
+        hsts=hsts_header(),
         debug=debug,
     )
 

@@ -67,10 +67,65 @@ class HeadersTest(AsyncHTTPTestCase):
         self.assertEqual(len(inline), 1)
         self.assertIn("importmap", inline[0])
 
-    def test_hsts_only_when_enabled(self):
-        self.assertNotIn("Strict-Transport-Security", self.fetch("/main").headers)
-        with mock.patch.dict(os.environ, {"ENABLE_HSTS": "1"}):
-            self.assertIn("max-age=31536000", self.fetch("/main").headers["Strict-Transport-Security"])
+
+class HstsTest(AsyncHTTPTestCase):
+    """HSTS is opt-in; includeSubDomains is a separate opt-in; preload is never sent."""
+    ENV = {}
+
+    def get_app(self):
+        with mock.patch.dict(os.environ, self.ENV):
+            return make_app()
+
+    def hsts(self):
+        return self.fetch("/main").headers.get("Strict-Transport-Security")
+
+
+class HstsOffByDefaultTest(HstsTest):
+    def test_no_hsts_header(self):
+        self.assertIsNone(self.hsts())
+
+
+class HstsZeroTest(HstsTest):
+    ENV = {"HSTS_SECONDS": "0", "HSTS_INCLUDE_SUBDOMAINS": "1"}
+
+    def test_zero_means_off_even_if_subdomains_flag_set(self):
+        self.assertIsNone(self.hsts())
+
+
+class HstsSecondsOnlyTest(HstsTest):
+    ENV = {"HSTS_SECONDS": "3600"}
+
+    def test_max_age_only(self):
+        self.assertEqual(self.hsts(), "max-age=3600")  # no includeSubDomains, no preload
+
+
+class HstsWithSubdomainsTest(HstsTest):
+    ENV = {"HSTS_SECONDS": "3600", "HSTS_INCLUDE_SUBDOMAINS": "1"}
+
+    def test_include_subdomains_only_when_asked(self):
+        self.assertEqual(self.hsts(), "max-age=3600; includeSubDomains")
+        self.assertNotIn("preload", self.hsts())
+
+
+class HstsValidationTest(AsyncHTTPTestCase):
+    def get_app(self):
+        return make_app()
+
+    def test_invalid_values_refuse_to_start(self):
+        for bad in ("abc", "-5", "1.5"):
+            with mock.patch.dict(os.environ, {"HSTS_SECONDS": bad}):
+                with self.assertRaises(SystemExit):
+                    make_app()
+
+
+class SecureCookieTest(AsyncHTTPTestCase):
+    def get_app(self):
+        with mock.patch.dict(os.environ, {"SECURE_COOKIES": "1"}):
+            return make_app()
+
+    def test_xsrf_cookie_secure_when_enabled(self):
+        cookie = [c for c in self.fetch("/main").headers.get_list("Set-Cookie") if c.startswith("_xsrf=")][0]
+        self.assertIn("Secure", cookie)
 
 
 class XsrfTest(AsyncHTTPTestCase):
