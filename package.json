@@ -1,0 +1,14 @@
+{
+  "name": "radient-3d-viewer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "three.js based simple 3D model viewer",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "vendor": "node tools/vendor.mjs"
+  },
+  "devDependencies": {
+    "bootstrap": "5.3.8",
+    "three": "0.187.0"
+  }
+}
