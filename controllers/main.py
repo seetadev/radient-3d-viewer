@@ -2,12 +2,14 @@ __author__ = 'sdpatro'
 import asyncio
 import mimetypes
 import os
+import secrets
 
 import tornado.web
 from tornado.web import GZipContentEncoding
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, RequestHandler
 
+from controllers.security import SecureHeadersMixin, page_csp
 from modules import uimodules
 
 # Minimal images (python:slim) have no /etc/mime.types; without this .glb is served as octet-stream.
@@ -19,17 +21,24 @@ GZipContentEncoding.CONTENT_TYPES = set(GZipContentEncoding.CONTENT_TYPES) | {"m
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 
-class LandingHandler(RequestHandler):
+class SecureStaticFileHandler(SecureHeadersMixin, tornado.web.StaticFileHandler):
+    pass
+
+
+class LandingHandler(SecureHeadersMixin, RequestHandler):
     def get(self, *args, **kwargs):
         self.redirect("/main")
 
 
-class MainHandler(RequestHandler):
+class MainHandler(SecureHeadersMixin, RequestHandler):
     def get(self, *args, **kwargs):
-        self.render(os.path.join(ROOT_DIR, "templates", "main.html"))
+        nonce = secrets.token_urlsafe(16)  # fresh per response; allows only the inline import map
+        self.set_header("Content-Security-Policy", page_csp(nonce))
+        _ = self.xsrf_token  # issue the XSRF cookie so a future client can call POST /api
+        self.render(os.path.join(ROOT_DIR, "templates", "main.html"), nonce=nonce)
 
 
-class ApiHandler(RequestHandler):
+class ApiHandler(SecureHeadersMixin, RequestHandler):
     def post(self):
         pass
 
@@ -39,13 +48,15 @@ def make_app(debug=False):
         [
             (r"/api", ApiHandler),
             (r"/main", MainHandler),
-            (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": os.path.join(ROOT_DIR, "static")}),
-            (r"/models/(.*)", tornado.web.StaticFileHandler, {"path": os.path.join(ROOT_DIR, "models")}),
+            (r"/static/(.*)", SecureStaticFileHandler, {"path": os.path.join(ROOT_DIR, "static")}),
+            (r"/models/(.*)", SecureStaticFileHandler, {"path": os.path.join(ROOT_DIR, "models")}),
             (r"/(.*)", LandingHandler),
         ],
         ui_modules=uimodules,
         autoreload=debug,
         compress_response=True,
+        xsrf_cookies=True,  # POST /api is the only state-changing route
+        xsrf_cookie_kwargs={"samesite": "Strict", "secure": os.environ.get("ENABLE_HSTS", "").lower() in ("1", "true", "yes")},
         debug=debug,
     )
 
