@@ -11,7 +11,8 @@ export default defineConfig({
     viewport: { width: 1000, height: 700 },
     launchOptions: { args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] },
   },
-  webServer: {
+  // E2E_NO_SERVER=1: test an already-running server (e.g. the docker compose stack)
+  webServer: process.env.E2E_NO_SERVER ? undefined : {
     command: `${process.env.PYTHON || 'python'} run.py ${port}`,
     url: `http://localhost:${port}/main`,
     reuseExistingServer: !process.env.CI,

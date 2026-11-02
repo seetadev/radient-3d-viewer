@@ -49,6 +49,11 @@ class ServerTest(AsyncHTTPTestCase):
             self.assertEqual(r.code, 200, m)
             self.assertEqual(r.body[:4], b"glTF", m)
 
+    def test_glb_content_type(self):
+        # independent of the OS mime database (python:slim images have none)
+        for m in MODELS:
+            self.assertEqual(self.fetch("/models/%s.glb" % m).headers["Content-Type"], "model/gltf-binary", m)
+
     def test_cubemap_served(self):
         for f in ("px", "nx", "py", "ny", "pz", "nz"):
             self.assertEqual(self.fetch("/static/cubemap/%s.jpg" % f).code, 200, f)
@@ -83,3 +88,31 @@ class ServerTest(AsyncHTTPTestCase):
 
     def test_api_stub_rejects_get(self):
         self.assertEqual(self.fetch("/api").code, 405)
+
+
+class CompressionTest(AsyncHTTPTestCase):
+    def get_app(self):
+        return make_app()
+
+    def fetch_gz(self, path):
+        # raw bytes + header: AsyncHTTPClient would transparently decode if decompress_response were on
+        return self.fetch(path, headers={"Accept-Encoding": "gzip"}, decompress_response=False)
+
+    def test_text_assets_are_gzipped(self):
+        for path in ("/main", "/static/app.js", "/static/vendor/three/build/three.core.js",
+                     "/static/vendor/bootstrap/bootstrap.min.css"):
+            r = self.fetch_gz(path)
+            self.assertEqual(r.code, 200, path)
+            self.assertEqual(r.headers.get("Content-Encoding"), "gzip", path)
+
+    def test_glb_models_are_gzipped_and_roundtrip(self):
+        import gzip
+        r = self.fetch_gz("/models/elephant.glb")
+        self.assertEqual(r.headers.get("Content-Encoding"), "gzip")
+        plain = open(os.path.join(ROOT, "models", "elephant.glb"), "rb").read()
+        self.assertLess(len(r.body), len(plain))
+        self.assertEqual(gzip.decompress(r.body), plain)
+
+    def test_jpeg_is_not_recompressed(self):
+        r = self.fetch_gz("/static/cubemap/px.jpg")
+        self.assertIsNone(r.headers.get("Content-Encoding"))
