@@ -2,7 +2,7 @@
 A three.js based simple 3D model viewer in browser, with preset sample models.
 
 ## How to run
-1. Execute the shell script: **./run-remote.sh**
+1. Execute the shell script: **./run-radient.sh**
 2. Specify the port where to host the server.
 3. Navigate to **localhost:[YOUR_PORT_NUMBER]** on your browser.
 
