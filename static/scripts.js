@@ -93,10 +93,7 @@ var callback = function ( geometry, materials ) {
 };
 
 function getMaterial(){
-    var imgTexture = new THREE.TextureLoader().load( "http://threejs.org/examples/textures/planets/moon_1024.jpg" );
-    imgTexture.wrapS = imgTexture.wrapT = THREE.RepeatWrapping;
-    imgTexture.anisotropy = 16;
-    imgTexture = null;
+    var imgTexture = null;
 
     var path = "static/cubemap/";
     var format = '.jpg';
