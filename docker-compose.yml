@@ -1,0 +1,26 @@
+services:
+  viewer:
+    build: .
+    image: radient-3d-viewer:local
+    environment:
+      PORT: "8888"
+      # DEBUG is intentionally not set: debug/autoreload are off unless explicitly enabled
+      # Production behind a TLS proxy (see README): HSTS is opt-in, empty = off
+      HSTS_SECONDS: ${HSTS_SECONDS:-}
+      HSTS_INCLUDE_SUBDOMAINS: ${HSTS_INCLUDE_SUBDOMAINS:-}
+      SECURE_COOKIES: ${SECURE_COOKIES:-}
+    ports:
+      - "${HOST_PORT:-8888}:8888"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8888/main', timeout=2)"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
