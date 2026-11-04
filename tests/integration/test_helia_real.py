@@ -142,9 +142,9 @@ class TestRealSidecar(tornado.testing.AsyncTestCase):
         assert raw_http("GET", "/health", token="")[0] == 200
 
 
-@pytest.mark.xfail(strict=False, reason="upstream sidecar bug (Tornado-Backend-Stack#15, 8afe218): an upload with no Content-Type "
+@pytest.mark.xfail(strict=False, reason="upstream sidecar bug, fixed in Tornado-Backend-Stack#15 (a114973); fails against older sidecar builds: an upload with no Content-Type "
                                          "header is answered 200 with the EMPTY-file CID and nothing is stored. HeliaClient always "
-                                         "sends application/octet-stream, so it is not affected. Passes (XPASS) once fixed upstream.")
+                                         "sends application/octet-stream, so it is not affected. XPASSes against a114973 and later.")
 def test_sidecar_should_not_silently_store_nothing_when_content_type_is_missing():
     # urllib adds a default Content-Type for a body, so go through http.client to really send none
     import http.client
